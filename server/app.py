@@ -60,7 +60,7 @@ class RecipeIndex(Resource):
             return {'error': 'Not authorized'}, 401
         user = User.query.filter(User.id == user_id).first()
         if user:
-            return [r.to_dict() for r in user.recipes], 200
+            return [r.to_dict(rules=('-user.recipes',)) for r in Recipe.query.all()], 200
         return {'error': 'Not authorized'}, 401
 
     def post(self):
