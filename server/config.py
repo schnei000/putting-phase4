@@ -19,6 +19,10 @@ db = SQLAlchemy(metadata=metadata)
 migrate = Migrate(app, db)
 db.init_app(app)
 
+# Ensure database tables are created
+with app.app_context():
+    db.create_all()
+
 bcrypt = Bcrypt(app)
 
 api = Api(app)

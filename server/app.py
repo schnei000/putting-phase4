@@ -25,10 +25,10 @@ class Signup(Resource):
 
         except IntegrityError:
             db.session.rollback()
-            return {'errors': ['Username already exists']}, 422
+            return {'errors': ["validation errors: Username already exists"]}, 422
         except (KeyError, ValueError) as e:
             db.session.rollback()
-            return {'errors': [str(e)]}, 422
+            return {'errors': ["validation errors: " + str(e)]}, 422
 
 
 class CheckSession(Resource):
@@ -54,9 +54,9 @@ class Login(Resource):
                 session['user_id'] = user.id
                 return user.to_dict(), 200
             else:
-                return {'error': 'Invalid username or password'}, 401
-        except Exception:
-            return {'error': 'Invalid username or password'}, 401
+                return {'error': 'Unauthorized'}, 401
+        except KeyError:
+            return {'error': 'Unauthorized'}, 401
 
 
 class Logout(Resource):
@@ -97,7 +97,7 @@ class RecipeIndex(Resource):
                 return recipe.to_dict(), 201
             except (IntegrityError, ValueError) as e:
                 db.session.rollback()
-                return {'errors': [str(e)]}, 422
+                return {'errors': ["validation errors: " + str(e)]}, 422
         else:
             return {'error': 'Unauthorized'}, 401
 
