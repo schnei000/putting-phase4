@@ -7,26 +7,26 @@ from models import User, Recipe
 
 class Signup(Resource):
     def post(self):
-        data = request.get_json()
         try:
+            data = request.get_json()
             user = User(
                 username=data['username'],
                 image_url=data.get('image_url'),
                 bio=data.get('bio')
             )
             user.password_hash = data['password']
-            
+
             db.session.add(user)
             db.session.commit()
-            
+
             session['user_id'] = user.id
-            
+
             return user.to_dict(), 201
-            
+
         except IntegrityError:
             db.session.rollback()
             return {'error': 'Username already exists'}, 422
-        except Exception as e:
+        except (KeyError, ValueError) as e:
             db.session.rollback()
             return {'error': str(e)}, 422
 
