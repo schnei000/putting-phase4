@@ -25,10 +25,10 @@ class Signup(Resource):
 
         except IntegrityError:
             db.session.rollback()
-            return {'error': 'Username already exists'}, 422
+            return {'errors': ['Username already exists']}, 422
         except (KeyError, ValueError) as e:
             db.session.rollback()
-            return {'error': str(e)}, 422
+            return {'errors': [str(e)]}, 422
 
 
 class CheckSession(Resource):
