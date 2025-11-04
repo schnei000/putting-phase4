@@ -95,9 +95,9 @@ class RecipeIndex(Resource):
                 db.session.commit()
                 
                 return recipe.to_dict(), 201
-            except Exception as e:
+            except (IntegrityError, ValueError) as e:
                 db.session.rollback()
-                return {'error': str(e)}, 422
+                return {'errors': [str(e)]}, 422
         else:
             return {'error': 'Unauthorized'}, 401
 
