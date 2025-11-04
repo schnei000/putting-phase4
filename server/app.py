@@ -9,20 +9,26 @@ class Signup(Resource):
     def post(self):
         data = request.get_json()
         try:
-            new_user = User(
-                username=data.get('username'),
+            user = User(
+                username=data['username'],
                 image_url=data.get('image_url'),
                 bio=data.get('bio')
             )
-            # Utilise le setter pour hacher le mot de passe
-            new_user.password_hash = data['password']
-            db.session.add(new_user)
+            user.password_hash = data['password']
+            
+            db.session.add(user)
             db.session.commit()
-            session['user_id'] = new_user.id
-            return new_user.to_dict(), 201
-        except (IntegrityError, ValueError) as e:
+            
+            session['user_id'] = user.id
+            
+            return user.to_dict(), 201
+            
+        except IntegrityError:
             db.session.rollback()
-            return {'errors': ['validation errors: ' + str(e)]}, 422
+            return {'error': 'Username already exists'}, 422
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 422
 
 
 class CheckSession(Resource):
@@ -32,7 +38,7 @@ class CheckSession(Resource):
             user = User.query.filter(User.id == user_id).first()
             if user:
                 return user.to_dict(), 200
-        return {'error': 'Not authorized'}, 401
+        return {'error': 'Unauthorized'}, 401
 
 
 class Login(Resource):
@@ -47,39 +53,45 @@ class Login(Resource):
 
 class Logout(Resource):
     def delete(self):
-        if session.get('user_id'):
-            session.pop('user_id')
-            return '', 204
-        return {'error': 'Not authorized'}, 401
+        user_id = session.get('user_id')
+        if user_id:
+            session.pop('user_id', None)
+            return {}, 204
+        else:
+            return {'error': 'Unauthorized'}, 401
 
 
 class RecipeIndex(Resource):
     def get(self):
         user_id = session.get('user_id')
-        if not user_id:
-            return {'error': 'Not authorized'}, 401
-        user = User.query.filter(User.id == user_id).first()
-        if user:
-            return [r.to_dict(rules=('-user.recipes',)) for r in Recipe.query.all()], 200
-        return {'error': 'Not authorized'}, 401
-
+        if user_id:
+            recipes = Recipe.query.all()
+            return [recipe.to_dict() for recipe in recipes], 200
+        else:
+            return {'error': 'Unauthorized'}, 401
+    
     def post(self):
-        if 'user_id' not in session:
-            return {'error': 'Not authorized'}, 401
-        data = request.get_json()
-        try:
-            recipe = Recipe(
-                title=data['title'],
-                instructions=data['instructions'],
-                minutes_to_complete=data['minutes_to_complete'],
-                user_id=session['user_id']
-            )
-            db.session.add(recipe)
-            db.session.commit()
-            return recipe.to_dict(), 201
-        except ValueError as e:
-            return {'errors': [str(e)]}, 422
-
+        user_id = session.get('user_id')
+        if user_id:
+            try:
+                data = request.get_json()
+                
+                recipe = Recipe(
+                    title=data.get('title'),
+                    instructions=data.get('instructions'),
+                    minutes_to_complete=data.get('minutes_to_complete'),
+                    user_id=user_id
+                )
+                
+                db.session.add(recipe)
+                db.session.commit()
+                
+                return recipe.to_dict(), 201
+            except Exception as e:
+                db.session.rollback()
+                return {'error': str(e)}, 422
+        else:
+            return {'error': 'Unauthorized'}, 401
 
 api.add_resource(Signup, '/signup', endpoint='signup')
 api.add_resource(CheckSession, '/check_session', endpoint='check_session')
