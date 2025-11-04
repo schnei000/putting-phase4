@@ -34,14 +34,20 @@ class Recipe(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, nullable=False)
     instructions = db.Column(db.String, nullable=False)
-    minutes_to_complete = db.Column(db.Integer)
+    minutes_to_complete = db.Column(db.Integer, nullable=False)
  
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
  
     @validates('instructions')
     def validate_instructions(self, key, value):
-        if len(value) < 50:
+        if not value or len(value) < 50:
             raise ValueError("Instructions must be at least 50 characters long")
+        return value
+
+    @validates('minutes_to_complete')
+    def validate_minutes(self, key, value):
+        if not isinstance(value, int) or value < 0:
+            raise ValueError("Minutes to complete must be a positive integer")
         return value
 
     serialize_rules = ('-user.recipes',)

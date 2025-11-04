@@ -43,19 +43,19 @@ class CheckSession(Resource):
 
 class Login(Resource):
     def post(self):
-        data = request.get_json()
         try:
+            data = request.get_json()
             username = data['username']
             password = data['password']
-            
+
             user = User.query.filter(User.username == username).first()
-            
+
             if user and user.authenticate(password):
                 session['user_id'] = user.id
                 return user.to_dict(), 200
-            else:
-                return {'error': 'Unauthorized'}, 401
-        except KeyError:
+
+            return {'error': 'Unauthorized'}, 401
+        except Exception:
             return {'error': 'Unauthorized'}, 401
 
 
@@ -97,7 +97,7 @@ class RecipeIndex(Resource):
                 return recipe.to_dict(), 201
             except (IntegrityError, ValueError) as e:
                 db.session.rollback()
-                return {'errors': ["validation errors: " + str(e)]}, 422
+                return {'errors': [str(e) for e in e.args]}, 422
         else:
             return {'error': 'Unauthorized'}, 401
 
