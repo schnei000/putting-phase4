@@ -12,7 +12,7 @@ class User(db.Model, SerializerMixin):
     image_url = db.Column(db.String)
     bio = db.Column(db.String)
 
-    recipes = relationship('Recipe', back_populates='user', cascade='all, delete-orphan')
+    recipes = db.relationship('Recipe', backref='user', cascade='all, delete-orphan')
 
     @hybrid_property
     def password_hash(self):
@@ -35,10 +35,9 @@ class Recipe(db.Model, SerializerMixin):
     title = db.Column(db.String, nullable=False)
     instructions = db.Column(db.String, nullable=False)
     minutes_to_complete = db.Column(db.Integer, nullable=False)
-
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    user = relationship('User', back_populates='recipes')
-
+ 
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+ 
     @validates('instructions')
     def validate_instructions(self, key, value):
         if not value or len(value) < 50:

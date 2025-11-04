@@ -1,8 +1,8 @@
 from flask import request, session
 from flask_restful import Resource
 from sqlalchemy.exc import IntegrityError
-
-from config import app, api, db
+ 
+from config import app, db, api
 from models import User, Recipe
 
 class Signup(Resource):
@@ -44,11 +44,19 @@ class CheckSession(Resource):
 class Login(Resource):
     def post(self):
         data = request.get_json()
-        user = User.query.filter_by(username=data.get('username')).first()
-        if user and user.authenticate(data.get('password')):
-            session['user_id'] = user.id
-            return user.to_dict(), 200
-        return {'error': 'Invalid username or password'}, 401
+        try:
+            username = data['username']
+            password = data['password']
+            
+            user = User.query.filter(User.username == username).first()
+            
+            if user and user.authenticate(password):
+                session['user_id'] = user.id
+                return user.to_dict(), 200
+            else:
+                return {'error': 'Invalid username or password'}, 401
+        except Exception:
+            return {'error': 'Invalid username or password'}, 401
 
 
 class Logout(Resource):
@@ -77,9 +85,9 @@ class RecipeIndex(Resource):
                 data = request.get_json()
                 
                 recipe = Recipe(
-                    title=data.get('title'),
-                    instructions=data.get('instructions'),
-                    minutes_to_complete=data.get('minutes_to_complete'),
+                    title=data['title'],
+                    instructions=data['instructions'],
+                    minutes_to_complete=data['minutes_to_complete'],
                     user_id=user_id
                 )
                 
